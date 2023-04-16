@@ -2,6 +2,9 @@ local StarterGui = game:GetService("StarterGui")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 
+-- Variable to show empty teams
+local ShowEmpty = false
+
 --[[
 	TeamShow function to show a single team
 	When the team is clicked it displays the team name
@@ -98,18 +101,37 @@ local function refresh()
 		end
 	end
 	
-	-- Create a frame for each team with at least 1 player
-	for team, plrnmbr in pairs(Teams) do
-		if not (plrnmbr == 0) and not script.Parent:FindFirstChild(team.."Team") then
-			local newTeam = StarterGui.SampleTeam:Clone()
-			newTeam.Parent = script.Parent
-			newTeam.Name = tostring(team).."Team"
-			newTeam.TeamName.Text = tostring(team)
-			newTeam.TeamPlayers.Text = tostring(plrnmbr).." PLAYERS"
-			newTeam.Visible = true
-			newTeam.ShowPlayers.Activated:Connect(function()
-				teamShow(tostring(team))
-			end)
+	if not ShowEmpty then
+		-- Create a frame for each team with at least 1 player
+		for team, plrnmbr in pairs(Teams) do
+			if not (plrnmbr == 0) and not script.Parent:FindFirstChild(team.."Team") then
+				local newTeam = StarterGui.SampleTeam:Clone()
+				newTeam.Parent = script.Parent
+				newTeam.Name = tostring(team).."Team"
+				newTeam.TeamName.Text = tostring(team)
+				newTeam.TeamPlayers.Text = tostring(plrnmbr).." PLAYERS"
+				newTeam.Visible = true
+				newTeam.ShowPlayers.Activated:Connect(function()
+					teamShow(tostring(team))
+				end)
+			elseif plrnmbr == 0 and script.Parent:FindFirstChild(team.."Team") then
+				script.Parent[team.."Team"]:Destroy()
+			end
+		end
+	else
+		-- Create a frame for each team
+		for team, plrnmbr in pairs(Teams) do
+			if not script.Parent:FindFirstChild(team.."Team") then
+				local newTeam = StarterGui.SampleTeam:Clone()
+				newTeam.Parent = script.Parent
+				newTeam.Name = tostring(team).."Team"
+				newTeam.TeamName.Text = tostring(team)
+				newTeam.TeamPlayers.Text = tostring(plrnmbr).." PLAYERS"
+				newTeam.Visible = true
+				newTeam.ShowPlayers.Activated:Connect(function()
+					teamShow(tostring(team))
+				end)
+			end
 		end
 	end
 end
@@ -122,15 +144,27 @@ Players.PlayerAdded:Connect(function(plr)
 	plr:WaitForChild("leaderstats"):WaitForChild("TeamValue").Changed:Connect(refresh)
 end)
 
-
--- Simple Blur Effect for Visual Improvement
-local BlurEffect = game:GetService("Lighting").Blur
-
 local Player = Players.LocalPlayer
 
 -- All the GUIs Needed for the Code
 local Buttons = Player.PlayerGui:WaitForChild("BasicGUI"):WaitForChild("Buttons")
 local Teams = Player.PlayerGui:WaitForChild("TeamsGUI"):WaitForChild("TeamsContainer")
+
+-- Switches the variable and changes GUI color when the ShowEmpty button is pressed, then refreshes the GUI
+Teams.TopBar.EmptyButton.Activated:Connect(function()
+	if ShowEmpty then
+		Teams.TopBar.EmptyButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+		ShowEmpty = false
+	else
+		Teams.TopBar.EmptyButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+		ShowEmpty = true
+	end
+	refresh()
+end)
+
+-- Simple Blur Effect for Visual Improvement
+local BlurEffect = game:GetService("Lighting").Blur
+
 
 -- Basic Positions of the GUIs
 local ButtonsPos = UDim2.fromScale(0, 0.937)
@@ -189,7 +223,7 @@ local function hideTeams()
 end
 
 -- Once the Teams Button is Clicked, it Triggers the Functions to Hide the Buttons and to Show the Teams GUI
-Buttons.TeamButton.MouseButton1Click:Connect(function()
+Buttons.TeamButton.Activated:Connect(function()
 
 	hideButtons()
 
@@ -200,7 +234,7 @@ Buttons.TeamButton.MouseButton1Click:Connect(function()
 end)
 
 -- Once the X Button on top of the Teams GUI is Clicked, it Triggers the Functions to Hide the Teams GUI and to Show the Buttons
-Teams.X.MouseButton1Click:Connect(function()
+Teams.TopBar.X.Activated:Connect(function()
 
 	hideTeams()
 
